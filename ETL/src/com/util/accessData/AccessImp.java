@@ -55,9 +55,12 @@ public class AccessImp implements AccessRead {
     private void init(String dbName){
     	File file = new File(".");
     	String database = file.getAbsolutePath().replace(".", dbName);
+    	dbUrl = "jdbc:odbc:Driver={Microsoft Access Driver (*.mdb)};";
     	dbUrl = dbUrl +"DBQ="+database;
     	filename = dbName;
     	listName.clear();
+    	tableHeadList.clear();
+    	dataList.clear();
     	try {
 			Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
 		} catch (ClassNotFoundException e) {
@@ -69,7 +72,7 @@ public class AccessImp implements AccessRead {
     
     public static void main(String args[]){
     	AccessImp access = new AccessImp();
-    	access.read("xx.mdb");
+    	access.read("mobile.mdb");
     	
     }
     
@@ -78,12 +81,15 @@ public class AccessImp implements AccessRead {
 		try {
 			conn = DriverManager.getConnection(dbUrl);
 			stmt=conn.createStatement();    
-			String sql4="SELECT   * FROM   MSysObjects WHERE   Flags=0   AND   Type=1";  //查询数据库中的所有表
-      	    ResultSet rs=stmt.executeQuery(sql4); 
-      	  while(rs.next()){
-  			System.out.println(rs.getString("name"));
-  			listName.add(rs.getString("name"));
-      	  }  
+			DatabaseMetaData  dbmd=conn.getMetaData();  
+			ResultSet  rs=dbmd.getTables(null,null,"%",null); 
+			String tablename = null;
+			while(rs.next()){  
+				tablename = rs.getString(3);
+				System.out.println(tablename);
+				if(!tablename.startsWith("MSys"))
+			     listName.add(tablename);
+			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			  stmt.close();    
@@ -106,22 +112,27 @@ public class AccessImp implements AccessRead {
 			for(tableLoop = 0; tableLoop < listName.size(); tableLoop++){
 				tableHeadList.clear();
 				String sql5="select * from "+ listName.get(tableLoop);
-				 ResultSet rs=stmt.executeQuery(sql5);  
+			    ResultSet rs=stmt.executeQuery(sql5);  
 			    ResultSetMetaData metaDate   =   rs.getMetaData();   
 			    int   number   =   metaDate.getColumnCount();   
 			    String[]   column   =   new   String[number];   
 			    for   (int   j   =   0;   j   <   column.length;   j++)   {   
 			       column[j]   =   metaDate.getColumnName(j   +   1);  
 			       tableHeadList.add(column[j].toString());
-			       System.out.println(column[j]);
+			       System.out.println("xxxx :"+column[j].toString());
 			    } 
 			    //一行行读取数据
 			    while(rs.next()){
 			    	System.out.println();
 			    	dataList.clear();
+			    	String data = "";
 			    	for(int loop = 0; loop < column.length; loop++){
-			    		System.out.print(" "+rs.getString(loop));
-			    		dataList.add(rs.getString(loop));
+			    	//	System.out.println(tableHeadList.get(loop));
+			    		data = "";
+			    		data=rs.getString(tableHeadList.get(loop));
+			    		
+			    		System.out.print(" "+data);
+			    		dataList.add(data);
 			    	}
 			    }
 			    //打印表头记录
